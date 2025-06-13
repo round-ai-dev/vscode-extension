@@ -2,6 +2,63 @@
 
 A VS Code extension for creating and managing graph-based Python AI Data preprocessing function execution environments.
 
+## 송형석 오프보딩
+
+### ROUND 팀에서 ecosystem 팀의 역할
+
+foundation 모델/pretotyping 또는 기타 사이드 아이템들로 유입된 Robotics AI Researcher/Developer user들을 잡아두는 생태계 구축. user를 확보하고 나면 뭐든지 할 수 있다.
+
+본 레포는 유입된 사용자들을 잡아두기 위해서 comfyui와 같은 형식의 데이터 전처리 툴을 제공하는 하나의 아이디어임
+
+### 이전 레포 History
+
+- [ROUND](https://github.com/round-ai-dev/ROUND): vscode extension이 아니라 web 프로젝트
+- [VSCODE](https://github.com/round-ai-dev/VSCODE): ROUND 레포를 vscode extension으로 옮긴 레포인데, 모든 기능을 옮기지는 못함
+
+### [VSCODE 레포](https://github.com/round-ai-dev/VSCODE)에서의 변경점
+
+VSCODE 레포가 상당히 어지러운 상태여서, 최소한의 리팩토링 진행 후 ROUND에서 미처 옮기지 못한 기능들 마저 옮기거나 다른 방향으로 직접 개발하고자 계획했으나, 리팩토링까지밖에 진행하지 못함.
+
+- js -> ts 리팩토링
+- [vscode-extension-samples/custom-editor-sample](https://github.com/microsoft/vscode-extension-samples/tree/main/custom-editor-sample) 프로젝트 구조 및 컨벤션대로 리팩토링
+- round file canvas 렌더링 로직 개선. vscode extension 보안정책상 외부 HTML 파일에 의존하지 않는 것이 안정성 높다(사실상 `src/webview/index.html` 사용 X. `src/editors/roundGraphEditor.ts`의 `getHtmlForWebview` 참고)
+- round file 변경 저장 로직 개선
+- 기타 환경설정 최신화
+
+### 프로젝트 개발 방향성
+
+#### Architecture
+
+목적: 관심사 분리를 통한 유지보수성 확보
+
+- **Core Graph Logic (UI와 독립적):** 그래프 데이터 구조, 노드 정의, 실행을 위한 Topological Sort, 실행 계획 생성, Python 백엔드와 통신.
+- **Adapter Layer:** Core Graph Logic의 데이터 모델을 시각화 UI 라이브러리(litegraph.js | Rete.js | ReactFlow 등)가 요구하는 형태로 변환. 또는 그 반대.
+- **UI Layer (웹뷰):** 시각화 UI 라이브러리(litegraph.js | Rete.js | ReactFlow 등)를 통한 그래프를 시각화 및 사용자 상호작용 처리
+- **Extension Host (VS Code):** UI Layer와의 메시지 처리, Python 백엔드 실행 조율.
+- **Python Backend:** 실제 로보틱스 데이터 전처리 작업 수행.
+
+현재는 Core Graph Logic ~ UI Layer를 모두 ComfyUI frontend dist를 활용해서 해결하고 있는 상태인데, 2024년 말 [comfyui-frontend](https://github.com/Comfy-Org/ComfyUI_frontend) 레포가 vue.js를 채택해서 최신화 여지가 존재함.
+
+하지만 당장은 frontend 또는 프로젝트 스택 변경보다는 기능 위주 개발 우선이 필요할 듯 보임
+
+프로덕트 자체가 comfyui와 많은 공통점을 가짐(python 블록 단위 시각화 & 실행)
+
+comfyUI의 용도를 로보틱스 AI 전처리로 제한하면 현재 목표하는 프로덕트가 됨. 부분집합?
+
+#### comfyUI
+
+comfyUI = (LiteGraph UI) + (Python Torch 백엔드)
+
+- LiteGraph.js의 노드 타입, 테마, 단축키 등을 커스텀한 @comfyorg/litegraph를 사용
+- comfyUI 레포가 파이썬 백엔드, 실행 관련 로직 등을 담당하고 있음(의존성 그래프 위상정렬, GPU-CPU 배치 등..
+- comfyUI_frontend에서 시각화 & 사용자 상호작용 등 프론트엔드 전체를 담당
+- litegraph에도 LGraph.run() 같은 루프 기반 자체 실행 기능이 있으나, 사용하지 않음. js 실행이기에 comfyUI의 목적에 유리하도록 파이썬 서버를 따로 두었음
+  - 데이터 전처리도 마찬가지로 파이썬을 사용함
+- 즉 comfyUI는 UI렌더/편집만 Litegraph 활용. 연산은 전부 Python
+- 아래는 comfyUI 서버를 외부 FastAPI와 조합해서 활용하는 방법을 다룸
+
+https://9elements.com/blog/hosting-a-comfyui-workflow-via-api/
+
 ## Features
 
 - **Graph Editor**: Visual graph editor for connecting Python functions. `.round` files open with a specialized graph editor interface

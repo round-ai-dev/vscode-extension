@@ -674,7 +674,7 @@ export class RoundGraphEditorProvider
       const templateCode = `def round${nextNumber}(parameter):
     # TODO: Implement your function logic
     return parameter
-`;
+  `;
       fs.writeFileSync(newFilePath, templateCode);
 
       // After creating the file, call 'addFunctionToGraph' with the new file path
